@@ -1,6 +1,16 @@
 import { createContext, useContext } from 'react';
+import type { Location } from 'react-router-dom';
 
 export type LayerStatus = 'current' | 'exiting' | 'stacked';
+
+/** Query-only navigation updates the active page without remounting its transition layer. */
+export function getLayerRenderLocation(
+  status: LayerStatus,
+  saved: Location,
+  current: Location
+): Location {
+  return status === 'current' && saved.pathname === current.pathname ? current : saved;
+}
 
 export type PageTransitionLayerContextValue = {
   status: LayerStatus;

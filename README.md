@@ -6,6 +6,9 @@
 
 **Your proxy, at a glance. Your configuration, in control.**
 
+This fork adds a **Threads** workspace: a searchable conversation list with a chat-style viewer,
+Markdown replies, and expandable tool calls and results. [Conversation viewer guide](docs/thread-viewer.md).
+
 A lightweight Web UI for CLI Proxy API.<br>
 Manage providers, credentials, quotas, and logs — from a single HTML file.
 

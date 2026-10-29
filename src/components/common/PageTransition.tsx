@@ -5,6 +5,7 @@ import type { AnimationPlaybackControlsWithThen } from 'motion-dom';
 import {
   PAGE_TRANSITION_LAYER_CONTEXT_VALUES,
   PageTransitionLayerContext,
+  getLayerRenderLocation,
   type LayerStatus,
 } from './PageTransitionLayer';
 import './PageTransition.scss';
@@ -446,7 +447,7 @@ export function PageTransition({
                   isAnimating,
                 }}
               >
-                {render(layer.location)}
+                {render(getLayerRenderLocation(layer.status, layer.location, location))}
               </PageTransitionLayerContext.Provider>
             </div>
           );

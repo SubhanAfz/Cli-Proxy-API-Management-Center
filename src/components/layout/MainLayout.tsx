@@ -30,6 +30,7 @@ import {
   IconSidebarStore,
   IconSidebarSystem,
   IconChevronDown,
+  IconMessageCircle,
 } from '@/components/ui/icons';
 import { INLINE_LOGO_JPEG } from '@/assets/logoInline';
 import {
@@ -64,6 +65,7 @@ const sidebarIcons: Record<string, ReactNode> = {
   pluginStore: <IconSidebarStore size={18} />,
   config: <IconSidebarConfig size={18} />,
   logs: <IconSidebarLogs size={18} />,
+  threads: <IconMessageCircle size={18} />,
   system: <IconSidebarSystem size={18} />,
 };
 
@@ -351,7 +353,8 @@ export function MainLayout() {
 
   const fullBrandName = 'CLI Proxy API Management Center';
   const abbrBrandName = t('title.abbr');
-  const isLogsPage = location.pathname.startsWith('/logs');
+  const isLogsPage =
+    location.pathname.startsWith('/logs') || location.pathname.startsWith('/threads');
   const isPluginResourcePage = location.pathname.startsWith('/plugin-pages');
   const showSidebarLabels = !sidebarCollapsed || sidebarOpen;
 
@@ -640,6 +643,12 @@ export function MainLayout() {
       id: 'observe',
       labelKey: 'nav_groups.observe',
       items: [
+        {
+          path: '/threads',
+          labelKey: 'nav.threads',
+          metaKey: 'nav_meta.threads',
+          icon: sidebarIcons.threads,
+        },
         {
           path: '/quota',
           labelKey: 'nav.quota_management',
