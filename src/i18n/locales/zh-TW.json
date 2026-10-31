@@ -2340,6 +2340,11 @@
     "expired": "綁定工作階段已過期，請重新開始。"
   },
   "threads": {
+    "missing_logs_one": "{{count}} 個較早的請求日誌無法使用",
+    "missing_logs_other": "{{count}} 個較早的請求日誌無法使用",
+    "retention_explanation": "這些請求 ID 仍在活動索引中，但代理上已沒有對應的會話檔案。日誌輪替或未啟用請求日誌可能導致此情況。這不是推論錯誤。增加日誌保留容量可儲存更多後續歷史，但無法還原已刪除的檔案。",
+    "failed_logs_one": "{{count}} 個請求日誌載入失敗。請重試。",
+    "failed_logs_other": "{{count}} 個請求日誌載入失敗。請重試。",
     "workspace": "工作區",
     "title": "會話",
     "refresh": "重新整理",
@@ -2379,8 +2384,6 @@
     "empty_description": "開啟會話，閱讀對話、檢查工具呼叫並瞭解執行過程。",
     "open_config": "開啟設定",
     "capture_hint": "啟用檔案日誌與請求日誌以擷取新流量。歷史會話僅在請求日誌仍可用時顯示。",
-    "unavailable_logs_one": "{{count}} 個請求無法讀取。日誌可能早於擷取時間、已過期或不完整。其他會話仍可查看。",
-    "unavailable_logs_other": "{{count}} 個請求無法讀取。日誌可能早於擷取時間、已過期或不完整。其他會話仍可查看。",
     "conversation_start": "對話歷史",
     "read_only": "唯讀歷史 · 由代理擷取",
     "user_message": "使用者訊息",

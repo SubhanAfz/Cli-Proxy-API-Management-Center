@@ -102,6 +102,13 @@
   color: var(--thread-muted);
   font-size: 12px;
   line-height: 1.5;
+  summary {
+    cursor: pointer;
+  }
+  p {
+    margin: 6px 0 0;
+    max-width: 85ch;
+  }
 }
 .workspace {
   display: grid;

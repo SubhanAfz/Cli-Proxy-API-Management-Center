@@ -28,7 +28,9 @@ observability:
     request-log: true
 ```
 
-Missing, expired, or incomplete transcripts are counted separately and do not hide successfully loaded conversations. If the operational log index has been cleared, the current backend does not provide a directory listing of successful request logs; those orphaned logs cannot be discovered by this frontend. This page is an inspection tool, not a durable archive of every historical client thread.
+Missing transcript files (HTTP 404) appear as a collapsed history notice with an explanation of retention. Download failures or incomplete transcripts have a separate count and retry button; they are never added to the missing-file count. Successfully loaded conversations remain available in both cases. If the operational log index has been cleared, the current backend does not provide a directory listing of successful request logs; those orphaned logs cannot be discovered by this frontend. This page is an inspection tool, not a durable archive of every historical client thread.
+
+`observability.logs.logs-max-total-size-mb` bounds disk usage for logs. A small limit can delete transcript files while their IDs remain in the operational index. Increasing the limit preserves more future history but cannot restore deleted files. This v8 configuration can be changed through the management API without restarting the proxy.
 
 Reasoning appears only when an upstream sends a visible summary. Encrypted/private reasoning cannot be recovered. Images and files appear as attachment indicators; opening a conversation never automatically fetches a logged remote image URL. Raw HTML in messages is not executed.
 
@@ -57,6 +59,6 @@ These screenshots contain synthetic conversations, not production messages.
 
 [Mobile conversation view](screenshots/thread-viewer-mobile.png)
 
-Verification completed for this change: 1,678 Bun tests passed, ESLint passed, and the single-file production build passed. Chromium checks passed for chat navigation, search, tool expansion, Markdown export, cached refresh, mobile list/detail navigation, light/dark rendering, missing-log handling, and clearing history after logout/account changes. The current upstream Vite configuration emits an existing advisory about its future native config loader; the build succeeds.
+Verification completed for this change: 1,680 Bun tests passed, ESLint passed, and the single-file production build passed. Chromium checks passed for chat navigation, search, tool expansion, Markdown export, cached refresh, mobile list/detail navigation, light/dark rendering, missing-log handling, and clearing history after logout/account changes. The current upstream Vite configuration emits an existing advisory about its future native config loader; the build succeeds.
 
 A separate authenticated browser check against a live CLIProxyAPI v8.0.47 instance also loaded its retained conversations and rendered the selected conversation. No production messages, credentials, or screenshots were copied into the repository.

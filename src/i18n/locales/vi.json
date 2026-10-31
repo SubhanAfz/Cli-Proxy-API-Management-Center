@@ -2320,6 +2320,11 @@
     "expired": "Phiên liên kết đã hết hạn. Hãy bắt đầu lại."
   },
   "threads": {
+    "missing_logs_one": "Không còn nhật ký của {{count}} yêu cầu cũ",
+    "missing_logs_other": "Không còn nhật ký của {{count}} yêu cầu cũ",
+    "retention_explanation": "Mã yêu cầu vẫn còn trong chỉ mục hoạt động nhưng tệp hội thoại không còn trên proxy. Nguyên nhân có thể là xoay vòng nhật ký hoặc tính năng ghi yêu cầu bị tắt. Đây không phải lỗi suy luận. Tăng dung lượng lưu giữ giúp lưu thêm lịch sử mới nhưng không khôi phục được tệp đã xóa.",
+    "failed_logs_one": "Không tải được nhật ký của {{count}} yêu cầu. Hãy thử lại.",
+    "failed_logs_other": "Không tải được nhật ký của {{count}} yêu cầu. Hãy thử lại.",
     "workspace": "Không gian làm việc",
     "title": "Hội thoại",
     "refresh": "Làm mới",
@@ -2359,8 +2364,6 @@
     "empty_description": "Mở hội thoại để đọc tin nhắn, kiểm tra lời gọi công cụ và theo dõi quá trình làm việc.",
     "open_config": "Mở cấu hình",
     "capture_hint": "Bật ghi nhật ký tệp và yêu cầu để thu thập lưu lượng mới. Hội thoại trước đây chỉ xuất hiện khi nhật ký còn tồn tại.",
-    "unavailable_logs_one": "Không thể đọc {{count}} yêu cầu. Nhật ký có thể chưa được ghi, đã hết hạn hoặc chưa đầy đủ. Các hội thoại khác vẫn khả dụng.",
-    "unavailable_logs_other": "Không thể đọc {{count}} yêu cầu. Nhật ký có thể chưa được ghi, đã hết hạn hoặc chưa đầy đủ. Các hội thoại khác vẫn khả dụng.",
     "conversation_start": "Lịch sử hội thoại",
     "read_only": "Lịch sử chỉ đọc · Được proxy ghi lại",
     "user_message": "Tin nhắn người dùng",

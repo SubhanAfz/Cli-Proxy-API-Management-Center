@@ -2314,6 +2314,11 @@
     "expired": "The binding session expired. Please start over."
   },
   "threads": {
+    "missing_logs_one": "{{count}} older request log is unavailable",
+    "missing_logs_other": "{{count}} older request logs are unavailable",
+    "retention_explanation": "These request IDs remain in the activity index, but their transcript files are no longer on the proxy. Log rotation or disabled request logging can cause this. This is not an inference error. Increasing log retention preserves more future history; it cannot restore deleted files.",
+    "failed_logs_one": "{{count}} request log could not be loaded. Retry to check it again.",
+    "failed_logs_other": "{{count}} request logs could not be loaded. Retry to check them again.",
     "workspace": "Workspace",
     "title": "Threads",
     "refresh": "Refresh",
@@ -2353,8 +2358,6 @@
     "empty_description": "Open a thread to read the conversation, inspect tool calls, and follow how the work unfolded.",
     "open_config": "Open configuration",
     "capture_hint": "Enable file logging and request logging to capture new traffic. Earlier conversations can only appear if their request logs are still available.",
-    "unavailable_logs_one": "{{count}} request could not be read. Its log may predate capture, have expired, or be incomplete. Other conversations remain available.",
-    "unavailable_logs_other": "{{count}} requests could not be read. Their logs may predate capture, have expired, or be incomplete. Other conversations remain available.",
     "conversation_start": "Conversation history",
     "read_only": "Read-only history · Captured by your proxy",
     "user_message": "User message",

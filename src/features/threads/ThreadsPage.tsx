@@ -17,6 +17,7 @@ import { copyToClipboard } from '@/utils/clipboard';
 import { downloadBlob } from '@/utils/download';
 import { useNotificationStore } from '@/stores';
 import { Conversation } from './Conversation';
+import { LogHistoryNotice } from './LogHistoryNotice';
 import { useThreads } from './hooks/useThreads';
 import { exportConversation, threadMatches } from './model/conversations';
 import styles from './ThreadsPage.module.scss';
@@ -117,11 +118,12 @@ export function ThreadsPage() {
           </Button>
         </div>
       )}
-      {(state.unavailable > 0 || state.failed > 0) && (
-        <div className={styles.retentionNotice}>
-          {t('threads.unavailable_logs', { count: state.unavailable + state.failed })}
-        </div>
-      )}
+      <LogHistoryNotice
+        unavailable={state.unavailable}
+        failed={state.failed}
+        loading={state.loading}
+        onRetry={() => void state.refresh(true)}
+      />
       <div className={`${styles.workspace} ${mobileConversation ? styles.mobileConversation : ''}`}>
         <aside className={styles.threadSidebar} aria-label={t('threads.thread_list')}>
           <div className={styles.listHeading}>

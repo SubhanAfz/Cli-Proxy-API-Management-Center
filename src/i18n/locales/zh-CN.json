@@ -2312,6 +2312,11 @@
     "expired": "绑定会话已过期，请重新开始。"
   },
   "threads": {
+    "missing_logs_one": "{{count}} 个较早的请求日志不可用",
+    "missing_logs_other": "{{count}} 个较早的请求日志不可用",
+    "retention_explanation": "这些请求 ID 仍在活动索引中，但代理上已没有对应的会话文件。日志轮转或未启用请求日志可能导致此情况。这不是推理错误。增加日志保留容量可保存更多后续历史，但无法恢复已删除的文件。",
+    "failed_logs_one": "{{count}} 个请求日志加载失败。请重试。",
+    "failed_logs_other": "{{count}} 个请求日志加载失败。请重试。",
     "workspace": "工作区",
     "title": "会话",
     "refresh": "刷新",
@@ -2351,8 +2356,6 @@
     "empty_description": "打开会话，阅读对话、检查工具调用并了解执行过程。",
     "open_config": "打开配置",
     "capture_hint": "启用文件日志和请求日志以捕获新流量。历史会话仅在请求日志仍然可用时显示。",
-    "unavailable_logs_one": "{{count}} 个请求无法读取。日志可能早于捕获时间、已过期或不完整。其他会话仍可查看。",
-    "unavailable_logs_other": "{{count}} 个请求无法读取。日志可能早于捕获时间、已过期或不完整。其他会话仍可查看。",
     "conversation_start": "对话历史",
     "read_only": "只读历史 · 由代理捕获",
     "user_message": "用户消息",
