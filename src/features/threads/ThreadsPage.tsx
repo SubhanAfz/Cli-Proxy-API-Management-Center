@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useDeferredValue, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { Button } from '@/components/ui/Button';
@@ -27,6 +27,7 @@ export function ThreadsPage() {
   const [autoRefresh, setAutoRefresh] = useState(true);
   const [showContext, setShowContext] = useState(false);
   const [query, setQuery] = useState('');
+  const deferredQuery = useDeferredValue(query);
   const [client, setClient] = useState('');
   const [mobileConversation, setMobileConversation] = useState(false);
   const [atBottom, setAtBottom] = useState(true);
@@ -44,9 +45,9 @@ export function ThreadsPage() {
   const filtered = useMemo(
     () =>
       state.threads.filter(
-        (thread) => (!client || thread.client === client) && threadMatches(thread, query)
+        (thread) => (!client || thread.client === client) && threadMatches(thread, deferredQuery)
       ),
-    [state.threads, query, client]
+    [state.threads, deferredQuery, client]
   );
   const requested = params.get('thread');
   const selected =
@@ -56,15 +57,12 @@ export function ThreadsPage() {
     selected?.items.filter((item) => item.kind === 'message' && !item.context).length ?? 0;
   const contextCount = selected?.items.filter((item) => item.context).length ?? 0;
 
-  useEffect(() => {
+  useLayoutEffect(() => {
     if (!selected) return;
     const changed = lastThread.current !== selected.id;
     lastThread.current = selected.id;
     if (changed || atBottom) {
-      const frame = requestAnimationFrame(() => {
-        if (scroller.current) scroller.current.scrollTop = scroller.current.scrollHeight;
-      });
-      return () => cancelAnimationFrame(frame);
+      if (scroller.current) scroller.current.scrollTop = scroller.current.scrollHeight;
     }
   }, [selected, atBottom]);
 
@@ -209,7 +207,23 @@ export function ThreadsPage() {
           <div className={styles.listStatus} role="status">
             {state.loading
               ? t('threads.indexing', { completed: state.completed, total: state.total })
-              : t('threads.retained_history')}
+              : t('threads.loaded_history', {
+                  loaded: state.requests.length,
+                  total: state.indexed,
+                })}
+            {state.remaining > 0 && (
+              <>
+                <Button
+                  variant="secondary"
+                  size="sm"
+                  loading={state.loading}
+                  onClick={() => void state.loadOlder()}
+                >
+                  {t('threads.load_older', { count: state.remaining })}
+                </Button>
+                <span>{t('threads.search_loaded')}</span>
+              </>
+            )}
             <span>{t('threads.private_view')}</span>
           </div>
         </aside>
@@ -281,13 +295,14 @@ export function ThreadsPage() {
               </div>
               <div
                 className={styles.conversationScroll}
+                data-conversation-scroll
                 ref={scroller}
                 onScroll={() => {
                   const el = scroller.current;
                   if (el) setAtBottom(el.scrollHeight - el.scrollTop - el.clientHeight < 100);
                 }}
               >
-                <Conversation thread={selected} showContext={showContext} />
+                <Conversation key={selected.id} thread={selected} showContext={showContext} />
               </div>
               {!atBottom && (
                 <button

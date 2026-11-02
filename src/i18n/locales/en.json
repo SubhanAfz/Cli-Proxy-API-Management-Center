@@ -2314,6 +2314,11 @@
     "expired": "The binding session expired. Please start over."
   },
   "threads": {
+    "loaded_history": "{{loaded}} of {{total}} request logs loaded",
+    "load_older": "Load older history ({{count}} remaining)",
+    "search_loaded": "Search covers loaded history. Load older history to include earlier threads.",
+    "earlier_messages": "Show earlier messages ({{count}} sections)",
+    "earlier_activity": "Show earlier activity ({{count}} items)",
     "missing_logs_one": "{{count}} older request log is unavailable",
     "missing_logs_other": "{{count}} older request logs are unavailable",
     "retention_explanation": "These request IDs remain in the activity index, but their transcript files are no longer on the proxy. Log rotation or disabled request logging can cause this. This is not an inference error. Increasing log retention preserves more future history; it cannot restore deleted files.",

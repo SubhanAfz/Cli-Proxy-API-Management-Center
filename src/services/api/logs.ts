@@ -103,9 +103,9 @@ export const responseDataToText = async (data: unknown): Promise<string> => {
   }
 };
 
-const downloadLog = async (path: string, options: LogsRequestOptions) => {
+const downloadLog = async (client: typeof apiClient, path: string, options: LogsRequestOptions) => {
   try {
-    return await apiClient.getRaw(path, {
+    return await client.getRaw(path, {
       ...options,
       responseType: 'blob',
       timeout: LOGS_TIMEOUT_MS,
@@ -132,9 +132,9 @@ const downloadLog = async (path: string, options: LogsRequestOptions) => {
   }
 };
 
-export const logsApi = {
+export const createLogsApi = (client = apiClient) => ({
   async fetchLogs(params: LogsQuery = {}, options: LogsRequestOptions = {}): Promise<LogsResponse> {
-    const data = await apiClient.get('/observability/logs', {
+    const data = await client.get('/observability/logs', {
       ...options,
       params,
       timeout: LOGS_TIMEOUT_MS,
@@ -142,10 +142,10 @@ export const logsApi = {
     return normalizeLogsResponse(data);
   },
 
-  clearLogs: (options: LogsRequestOptions = {}) => apiClient.delete('/observability/logs', options),
+  clearLogs: (options: LogsRequestOptions = {}) => client.delete('/observability/logs', options),
 
   async fetchErrorLogs(options: LogsRequestOptions = {}): Promise<ErrorLogsResponse> {
-    const data = await apiClient.get('/observability/logs/errors', {
+    const data = await client.get('/observability/logs/errors', {
       ...options,
       timeout: LOGS_TIMEOUT_MS,
     });
@@ -153,8 +153,10 @@ export const logsApi = {
   },
 
   downloadErrorLog: (filename: string, options: LogsRequestOptions = {}) =>
-    downloadLog(`/observability/logs/errors/${encodeURIComponent(filename)}`, options),
+    downloadLog(client, `/observability/logs/errors/${encodeURIComponent(filename)}`, options),
 
   downloadRequestLogById: (id: string, options: LogsRequestOptions = {}) =>
-    downloadLog(`/observability/logs/requests/${encodeURIComponent(id)}`, options),
-};
+    downloadLog(client, `/observability/logs/requests/${encodeURIComponent(id)}`, options),
+});
+
+export const logsApi = createLogsApi();

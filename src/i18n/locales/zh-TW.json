@@ -2340,6 +2340,11 @@
     "expired": "綁定工作階段已過期，請重新開始。"
   },
   "threads": {
+    "loaded_history": "已載入 {{loaded}} / {{total}} 個請求日誌",
+    "load_older": "載入更早的歷史（剩餘 {{count}} 個）",
+    "search_loaded": "搜尋僅包含已載入的歷史。載入更早的歷史以查找之前的會話。",
+    "earlier_messages": "顯示更早的訊息（{{count}} 個段落）",
+    "earlier_activity": "顯示更早的活動（{{count}} 項）",
     "missing_logs_one": "{{count}} 個較早的請求日誌無法使用",
     "missing_logs_other": "{{count}} 個較早的請求日誌無法使用",
     "retention_explanation": "這些請求 ID 仍在活動索引中，但代理上已沒有對應的會話檔案。日誌輪替或未啟用請求日誌可能導致此情況。這不是推論錯誤。增加日誌保留容量可儲存更多後續歷史，但無法還原已刪除的檔案。",

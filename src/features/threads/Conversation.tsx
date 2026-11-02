@@ -1,4 +1,4 @@
-import { Fragment, useState } from 'react';
+import { Fragment, memo, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
@@ -9,9 +9,15 @@ import {
   IconChevronRight,
 } from '@/components/ui/icons';
 import type { ConversationItem, ConversationThread } from './types';
+import { Button } from '@/components/ui/Button';
+import {
+  ACTIVITY_PAGE_SIZE,
+  CONVERSATION_PAGE_SIZE,
+  conversationBlocks,
+} from './model/visibleConversation';
 import styles from './ThreadsPage.module.scss';
 
-function Markdown({ text }: { text: string }) {
+const Markdown = memo(function Markdown({ text }: { text: string }) {
   const { t } = useTranslation();
   return (
     <div className={styles.markdown}>
@@ -36,7 +42,7 @@ function Markdown({ text }: { text: string }) {
       </ReactMarkdown>
     </div>
   );
-}
+});
 
 function pretty(value: string): string {
   try {
@@ -49,7 +55,7 @@ function pretty(value: string): string {
 function ToolCall({ item }: { item: ConversationItem }) {
   const { t } = useTranslation();
   const [open, setOpen] = useState(false);
-  const args = pretty(item.arguments || '');
+  const args = open ? pretty(item.arguments || '') : '';
   const output = item.kind === 'tool-result' ? item.text : item.output;
   return (
     <details className={styles.toolCall} onToggle={(event) => setOpen(event.currentTarget.open)}>
@@ -107,6 +113,7 @@ function AssistantTurn({
 }) {
   const { t } = useTranslation();
   const [open, setOpen] = useState(false);
+  const [visibleActivity, setVisibleActivity] = useState(ACTIVITY_PAGE_SIZE);
   if (!items.length) return null;
   const hasActivity = items.some((item) => item.kind !== 'message' || item.phase === 'commentary');
   const last = items[items.length - 1];
@@ -143,8 +150,20 @@ function AssistantTurn({
           </summary>
           {open && (
             <div className={styles.activityBody}>
-              {work.map((item, index) => (
-                <ActivityItem key={`${item.id || item.callId || index}-${item.kind}`} item={item} />
+              {work.length > visibleActivity && (
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => setVisibleActivity((n) => n + ACTIVITY_PAGE_SIZE)}
+                >
+                  {t('threads.earlier_activity', { count: work.length - visibleActivity })}
+                </Button>
+              )}
+              {work.slice(-visibleActivity).map((item, index) => (
+                <ActivityItem
+                  key={`${item.id || item.callId || Math.max(0, work.length - visibleActivity) + index}-${item.kind}`}
+                  item={item}
+                />
               ))}
             </div>
           )}
@@ -159,7 +178,7 @@ function AssistantTurn({
   );
 }
 
-export function Conversation({
+export const Conversation = memo(function Conversation({
   thread,
   showContext,
 }: {
@@ -167,31 +186,48 @@ export function Conversation({
   showContext: boolean;
 }) {
   const { t } = useTranslation();
-  const blocks: {
-    user?: ConversationItem;
-    activity: ConversationItem[];
-    context?: ConversationItem;
-  }[] = [];
-  for (const item of thread.items) {
-    if (item.context) {
-      if (showContext) blocks.push({ activity: [], context: item });
-      continue;
+  const blocks = useMemo(
+    () => conversationBlocks(thread.items, showContext),
+    [thread.items, showContext]
+  );
+  const [visibleBlocks, setVisibleBlocks] = useState(CONVERSATION_PAGE_SIZE);
+  const scrollAnchor = useRef<{ element: HTMLElement; height: number; top: number } | null>(null);
+  useLayoutEffect(() => {
+    const anchor = scrollAnchor.current;
+    if (anchor) {
+      anchor.element.scrollTop = anchor.top + anchor.element.scrollHeight - anchor.height;
+      scrollAnchor.current = null;
     }
-    if (item.kind === 'message' && item.role === 'user') blocks.push({ user: item, activity: [] });
-    else {
-      if (!blocks.length || blocks[blocks.length - 1].context) blocks.push({ activity: [] });
-      blocks[blocks.length - 1].activity.push(item);
-    }
-  }
+  }, [visibleBlocks]);
+  const hidden = Math.max(0, blocks.length - visibleBlocks);
   return (
     <div className={styles.messages}>
-      <div className={styles.startMarker}>
-        <span />
-        <span>{t('threads.conversation_start')}</span>
-        <span />
-      </div>
-      {blocks.map((block, index) => (
-        <Fragment key={`${block.user?.id || block.context?.id || index}`}>
+      {hidden > 0 ? (
+        <Button
+          variant="secondary"
+          size="sm"
+          onClick={(event) => {
+            const element = event.currentTarget.closest<HTMLElement>('[data-conversation-scroll]');
+            if (element)
+              scrollAnchor.current = {
+                element,
+                height: element.scrollHeight,
+                top: element.scrollTop,
+              };
+            setVisibleBlocks((count) => count + CONVERSATION_PAGE_SIZE);
+          }}
+        >
+          {t('threads.earlier_messages', { count: hidden })}
+        </Button>
+      ) : (
+        <div className={styles.startMarker}>
+          <span />
+          <span>{t('threads.conversation_start')}</span>
+          <span />
+        </div>
+      )}
+      {blocks.slice(-visibleBlocks).map((block, index) => (
+        <Fragment key={`${block.user?.id || block.context?.id || hidden + index}`}>
           {block.context && (
             <details className={styles.context}>
               <summary>
@@ -223,4 +259,4 @@ export function Conversation({
       </div>
     </div>
   );
-}
+});

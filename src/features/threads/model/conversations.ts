@@ -396,24 +396,49 @@ export function mergeConversation(
   incoming: ConversationItem[]
 ): ConversationItem[] {
   if (!existing.length) return [...incoming];
-  const result = [...existing];
-  const keys = result.map(identity);
-  const firstAnchor = incoming.findIndex((item) => keys.includes(identity(item)));
-  if (firstAnchor < 0) return [...existing, ...incoming];
-  let cursor = keys.indexOf(identity(incoming[firstAnchor]));
-  for (const item of incoming) {
-    const key = identity(item);
-    const index = keys.indexOf(key, cursor);
-    if (index >= 0) {
-      // Preserve the initial event's origin while accepting a complete copy of a streamed item.
-      result[index] = { ...result[index], ...item, requestId: result[index].requestId };
-      cursor = index + 1;
-    } else {
-      result.splice(cursor, 0, item);
-      keys.splice(cursor, 0, key);
-      cursor++;
-    }
+  const incomingKeys = incoming.map(identity);
+  const existingKeys = existing.map(identity);
+  const commonLength = Math.min(existing.length, incoming.length);
+  let sharedPrefix = 0;
+  while (sharedPrefix < commonLength && existingKeys[sharedPrefix] === incomingKeys[sharedPrefix]) {
+    sharedPrefix++;
   }
+  // Full-history replays normally share a prefix. Avoid building an index in that common case.
+  if (sharedPrefix === commonLength) {
+    return existing
+      .map((item, index) =>
+        index < incoming.length ? { ...item, ...incoming[index], requestId: item.requestId } : item
+      )
+      .concat(incoming.slice(existing.length));
+  }
+  const positions = new Map<string, number[]>();
+  existingKeys.forEach((key, index) => {
+    const indices = positions.get(key);
+    if (indices) indices.push(index);
+    else positions.set(key, [index]);
+  });
+  const firstAnchor = incomingKeys.find((key) => positions.has(key));
+  if (firstAnchor === undefined) return [...existing, ...incoming];
+  let cursor = positions.get(firstAnchor)![0];
+  const result = existing.slice(0, cursor);
+  incoming.forEach((item, itemIndex) => {
+    const indices = positions.get(incomingKeys[itemIndex]) ?? [];
+    // Find the next unused occurrence without scanning the whole conversation.
+    let low = 0;
+    let high = indices.length;
+    while (low < high) {
+      const middle = (low + high) >>> 1;
+      if (indices[middle] < cursor) low = middle + 1;
+      else high = middle;
+    }
+    const index = indices[low];
+    if (index !== undefined) {
+      while (cursor < index) result.push(existing[cursor++]);
+      result.push({ ...existing[index], ...item, requestId: existing[index].requestId });
+      cursor = index + 1;
+    } else result.push(item);
+  });
+  while (cursor < existing.length) result.push(existing[cursor++]);
   return result;
 }
 
@@ -454,7 +479,9 @@ export function buildConversationThreads(requests: ConversationRequest[]): Conve
   const groups = new Map<string, ConversationRequest[]>();
   for (const request of ordered) {
     const id = group(request);
-    groups.set(id, [...(groups.get(id) ?? []), request]);
+    const entries = groups.get(id);
+    if (entries) entries.push(request);
+    else groups.set(id, [request]);
   }
   return [...groups]
     .map(([id, entries]): ConversationThread => {
