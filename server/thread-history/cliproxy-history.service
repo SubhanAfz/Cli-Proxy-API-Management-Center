@@ -1,0 +1,34 @@
+[Unit]
+Description=Persistent conversation index for CLIProxyAPI
+After=network.target cliproxyapi.service
+StartLimitIntervalSec=0
+
+[Service]
+Type=simple
+User=cliproxyapi
+Group=cliproxyapi
+WorkingDirectory=/var/lib/cliproxy-history
+ExecStart=/opt/cliproxy-history/runtime/bin/node --max-old-space-size=512 /opt/cliproxy-history/index.mjs
+Environment=HISTORY_STATE_DIR=/var/lib/cliproxy-history
+Environment=HISTORY_LOG_DIR=/var/lib/cliproxyapi/auth/logs
+Environment=HISTORY_PORT=8318
+Restart=always
+RestartSec=5
+UMask=0077
+Nice=10
+IOSchedulingClass=idle
+MemoryMax=768M
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectHome=true
+ProtectSystem=strict
+ReadOnlyPaths=/var/lib/cliproxyapi
+ReadWritePaths=/var/lib/cliproxy-history
+InaccessiblePaths=/etc/cliproxyapi
+RestrictAddressFamilies=AF_INET AF_INET6 AF_UNIX
+ProtectKernelTunables=true
+ProtectKernelModules=true
+ProtectControlGroups=true
+
+[Install]
+WantedBy=multi-user.target

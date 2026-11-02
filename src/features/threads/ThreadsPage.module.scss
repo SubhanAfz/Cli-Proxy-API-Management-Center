@@ -384,6 +384,14 @@
   padding: 20px clamp(20px, 4vw, 70px) 50px;
   box-sizing: border-box;
 }
+.messageBlock {
+  content-visibility: auto;
+  contain-intrinsic-size: auto 180px;
+}
+.plainMessage {
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
 .startMarker {
   display: flex;
   align-items: center;

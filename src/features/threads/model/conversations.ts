@@ -461,7 +461,7 @@ function pairTools(items: ConversationItem[]): ConversationItem[] {
   });
 }
 
-export function buildConversationThreads(requests: ConversationRequest[]): ConversationThread[] {
+export function groupConversationRequests(requests: ConversationRequest[]) {
   const ordered = [...requests].sort(
     (a, b) =>
       a.timestamp.localeCompare(b.timestamp) ||
@@ -483,18 +483,26 @@ export function buildConversationThreads(requests: ConversationRequest[]): Conve
     if (entries) entries.push(request);
     else groups.set(id, [request]);
   }
+  return groups;
+}
+
+export function mergeConversationRequestItems(
+  all: ConversationItem[],
+  request: ConversationRequest
+) {
+  if (request.previousResponseId) {
+    const ids = new Set(all.filter((item) => item.id).map(identity));
+    return [...all, ...request.items.filter((item) => !item.id || !ids.has(identity(item)))];
+  }
+  return mergeConversation(all, request.items);
+}
+
+export function buildConversationThreads(requests: ConversationRequest[]): ConversationThread[] {
+  const groups = groupConversationRequests(requests);
   return [...groups]
     .map(([id, entries]): ConversationThread => {
       const items = pairTools(
-        entries.reduce((all, r) => {
-          // previous_response_id carries a delta, not a replay of the complete history.
-          // In particular, a new short message such as "yes" must not match an older "yes".
-          if (r.previousResponseId) {
-            const ids = new Set(all.filter((item) => item.id).map(identity));
-            return [...all, ...r.items.filter((item) => !item.id || !ids.has(identity(item)))];
-          }
-          return mergeConversation(all, r.items);
-        }, [] as ConversationItem[])
+        entries.reduce(mergeConversationRequestItems, [] as ConversationItem[])
       );
       const users = items.filter(
         (item) => item.kind === 'message' && item.role === 'user' && !item.context

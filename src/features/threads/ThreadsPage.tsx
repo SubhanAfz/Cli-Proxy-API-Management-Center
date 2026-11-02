@@ -37,7 +37,7 @@ export function ThreadsPage() {
   const scroller = useRef<HTMLDivElement>(null);
   const lastThread = useRef('');
   const showNotification = useNotificationStore((store) => store.showNotification);
-  useHeaderRefresh(() => state.refresh(true), active);
+  useHeaderRefresh(() => state.refresh(), active);
   const clients = useMemo(
     () => [...new Set(state.threads.map((thread) => thread.client).filter(Boolean))].sort(),
     [state.threads]
@@ -100,7 +100,7 @@ export function ThreadsPage() {
           <Button
             variant="secondary"
             size="sm"
-            onClick={() => void state.refresh(true)}
+            onClick={() => void state.refresh()}
             loading={state.loading}
           >
             <IconRefreshCw size={15} />
@@ -111,7 +111,7 @@ export function ThreadsPage() {
       {state.error && (
         <div className={styles.notice} role="alert">
           {state.error}
-          <Button variant="ghost" size="sm" onClick={() => void state.refresh(true)}>
+          <Button variant="ghost" size="sm" onClick={() => void state.refresh()}>
             {t('threads.retry')}
           </Button>
         </div>
@@ -120,7 +120,7 @@ export function ThreadsPage() {
         unavailable={state.unavailable}
         failed={state.failed}
         loading={state.loading}
-        onRetry={() => void state.refresh(true)}
+        onRetry={() => void state.refresh()}
       />
       <div className={`${styles.workspace} ${mobileConversation ? styles.mobileConversation : ''}`}>
         <aside className={styles.threadSidebar} aria-label={t('threads.thread_list')}>
@@ -208,22 +208,9 @@ export function ThreadsPage() {
             {state.loading
               ? t('threads.indexing', { completed: state.completed, total: state.total })
               : t('threads.loaded_history', {
-                  loaded: state.requests.length,
-                  total: state.indexed,
+                  loaded: state.indexed,
+                  total: state.total,
                 })}
-            {state.remaining > 0 && (
-              <>
-                <Button
-                  variant="secondary"
-                  size="sm"
-                  loading={state.loading}
-                  onClick={() => void state.loadOlder()}
-                >
-                  {t('threads.load_older', { count: state.remaining })}
-                </Button>
-                <span>{t('threads.search_loaded')}</span>
-              </>
-            )}
             <span>{t('threads.private_view')}</span>
           </div>
         </aside>

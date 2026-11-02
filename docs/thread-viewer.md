@@ -2,30 +2,45 @@
 
 Open **Observe → Threads**, or visit `management.html#/threads` after signing in with your management key.
 
-The viewer adds a searchable conversation list and a read-only chat timeline. User messages appear as bubbles; model replies support Markdown, fenced code, lists, tables, and links. Expand an activity row to inspect commentary, visible reasoning summaries, tool arguments, and paired tool results. System and developer context is hidden initially and can be expanded separately. Conversations can be exported as Markdown.
+Every retained, parseable text conversation loads automatically. There are no history pages or “show earlier” controls. Search and Markdown export cover the complete loaded history, including every tool argument and result. User messages appear as bubbles; model replies support Markdown, code, lists, tables, and links. Expand activity and tool rows to inspect recorded work. System/developer context can be shown separately.
 
-The layout supports desktop and mobile. On a narrow screen, selecting a thread opens its conversation; the back button returns to the list. Thread selection is included in the URL. The Live switch checks for new requests every 15 seconds while the page is visible. Refresh retries failed or incomplete downloads. Missing files are not repeatedly downloaded.
+## How full-history loading stays fast
 
-## Data and grouping
+The `server/thread-history` companion scans the Pi's retained request logs once. It shares the frontend parser and ordered history stitching, so repeated request snapshots become one conversation. SQLite stores identical message/tool bodies once, with request references linking to them. Materialized threads contain merged messages and request metadata rather than hundreds of duplicated histories.
 
-This feature uses the existing v8 Management API. No proxy backend change is required:
+The dashboard fetches **one complete compressed snapshot** from `/v8/management/thread-history/threads`. Subsequent polls send an ETag; an unchanged index returns HTTP 304 without transferring history again. The companion checks for new or changed files every three seconds and rebuilds only affected threads. A durable dirty marker recovers interrupted builds. Saved complete snapshots remain usable during incremental updates and service restarts.
 
-- `/v8/management/observability/logs` (without `limit`) discovers inference request IDs from all retained main logs. An explicit `limit=0` is rejected by the backend.
-- `/v8/management/observability/logs/requests/:id` provides each request/response transcript.
+The browser keeps the complete snapshot in memory across dashboard navigation. Sign-out or a connection/management-key change immediately cancels requests and clears this private cache. A reload retrieves the full snapshot again. The Live switch checks for updates every 15 seconds while the page is visible.
 
-The initial load reads the small operational index, then fetches only the **12 newest request transcripts**, with at most three downloads at once. **Load older history** reads the next batch of 12; it does not download the entire archive in the background. The footer reports loaded requests versus indexed requests. The list, search and Markdown export cover loaded history. A recent request may replay much of a conversation, but loading older requests is necessary to recover earlier context omitted from that snapshot or discover earlier threads.
+Every conversation message is present in memory and the DOM. CSS `content-visibility` lets the browser skip offscreen layout; expensive Markdown formatting is deferred automatically until text approaches the viewport. Scrolling needs no network request or paging button. Tool bodies remain collapsed until opened, and hidden arguments are not formatted unnecessarily.
 
-After the first scan, live refresh uses the backend log cursor to read new entries; a cursor reset triggers a fresh index scan without redownloading cached transcripts. Each refresh loads at most 12 new requests. Additional requests remain accessible through Load older history. Already missing files are skipped; Refresh retries failed downloads.
+## Companion deployment
 
-Parsed requests remain in memory when navigating to other dashboard pages in the same tab. A reload starts a fresh bounded load. There is no conversation database, localStorage history, or bundled credential. Work is cancelled and cached history is cleared immediately on sign-out or a connection/management-key change. Overlapping navigation layers cannot cancel another active reader. Client API keys do not grant access to the viewer.
+The frontend still builds to one self-contained `dist/index.html`, installed as `management.html`. The optional companion is a separate Node.js 24 service; it does not replace or restart CLIProxyAPI.
 
-Long conversations initially render the latest 25 turn sections. **Show earlier messages** reveals 25 more while preserving the scroll position. Expanded activity initially mounts the last 100 items and can reveal earlier items in batches of 100. All loaded messages remain searchable and exportable even when their rows are not currently rendered. Hidden tool arguments are formatted only when opened, and unchanged Markdown is memoized.
+```sh
+bun install --frozen-lockfile
+bun run verify
+```
 
-Requests are grouped using `Thread-Id`, Codex client/turn metadata, `Session-Id`, conversation IDs, or a sufficiently long prompt cache identifier. Requests using `previous_response_id` can be joined to their earlier response. Requests without an identifier remain separate rather than being guessed into an unrelated conversation.
+`bun run build:history` produces `server/thread-history/build/index.mjs`. Install it with a private Node.js 24 runtime and the provided `cliproxy-history.service`. Its defaults are:
 
-Repeated history snapshots are stitched using ordered message and tool-call identifiers, with content anchors for items without IDs. Tool outputs are matched by call ID. Both completed Responses payloads and streamed output/tool argument events are supported, together with Chat Completions and Anthropic message/tool formats.
+- Listen: `127.0.0.1:8318`.
+- Read-only logs: `/var/lib/cliproxyapi/auth/logs`.
+- Private state: `/var/lib/cliproxy-history/history.sqlite`.
+- Authentication check: the local proxy's existing v8 management API.
 
-The UI only shows data present in retained logs. Logging must be enabled to capture new traffic:
+Environment overrides are `HISTORY_PORT`, `HISTORY_LOG_DIR`, `HISTORY_STATE_DIR`, and `HISTORY_UPSTREAM`. The upstream must use `127.0.0.1`. Protect the state directory with mode 0700 and the SQLite files with mode 0600. Neither the database nor snapshots store raw Authorization headers or OAuth files.
+
+Expose the extension under the same HTTPS origin. For this Pi's Tailscale Serve setup, add the `/v8/management/thread-history` path to port 8318 while keeping `/` pointed at the existing proxy on port 8317. The companion accepts both the full declared extension path and `/threads` for a prefix-stripping reverse proxy.
+
+Every snapshot request is authenticated through the existing management API, including conditional requests. Client API keys are rejected. Revoked management credentials cannot retrieve cached history. Before the first complete build, HTTP 202 reports progress and the dashboard waits automatically. A missing/unavailable companion produces an error rather than quietly showing only recent history.
+
+## Completeness and retention
+
+The companion discovers retained request files directly, including files whose operational log index has rotated away. Groups use explicit thread/session IDs, Codex turn metadata, conversation IDs, prompt-cache IDs, or `previous_response_id` chains. Unidentified requests remain separate. Ordered anchors preserve repeated short messages and tool-result pairing. The native live-audio wire dump at `/v1/live` is not a JSON text-conversation transcript and is excluded from text-history counts.
+
+The viewer can show only what was recorded and retained. Logging must remain enabled:
 
 ```yaml
 observability:
@@ -34,39 +49,12 @@ observability:
     request-log: true
 ```
 
-Missing transcript files (HTTP 404) encountered in loaded batches appear as a collapsed history notice with an explanation of retention. Download failures or incomplete transcripts have a separate count and retry button; they are never added to the missing-file count. Successfully loaded conversations remain available in both cases. If the operational log index has been cleared, the current backend does not provide a directory listing of successful request logs; those orphaned logs cannot be discovered by this frontend. This page is an inspection tool, not a durable archive of every historical client thread.
+When raw files expire under `logs-max-total-size-mb`, their request links are removed and affected threads are rebuilt from the remaining files. Unreferenced bodies are garbage-collected. Deleted raw history is not restored by increasing retention. Missing old request IDs and malformed text logs have separate notices. Reasoning is shown only if the upstream recorded a visible summary; private encrypted reasoning cannot be recovered.
 
-`observability.logs.logs-max-total-size-mb` bounds disk usage for logs. A small limit can delete transcript files while their IDs remain in the operational index. Increasing the limit preserves more future history but cannot restore deleted files. This v8 configuration can be changed through the management API without restarting the proxy.
+Logged remote images are never automatically fetched. Attachments appear as indicators; Markdown does not execute raw HTML.
 
-Reasoning appears only when an upstream sends a visible summary. Encrypted/private reasoning cannot be recovered. Images and files appear as attachment indicators; opening a conversation never automatically fetches a logged remote image URL. Raw HTML in messages is not executed.
+## Verification
 
-## Development and verification
+Regression tests cover exact full-history reconstruction against the original parser, message deduplication, warm restarts, interrupted-build recovery, file retention, gzip, management authentication, revocation and ETags. Loader tests cover a complete 2,000-thread snapshot in one request, automatic initial-build waiting, cancellation, navigation ownership and logout isolation. A 2,000-message render includes every user turn without paging controls. Stitching is checked against ordered-anchor semantics over 500 randomized duplicate/insertion cases.
 
-Use Bun 1.4.3 and Node.js 24:
-
-```sh
-bun install --frozen-lockfile
-bun run dev
-bun test tests/conversations.test.ts
-bun run verify
-```
-
-`tests/fixtures/conversationLogs.ts` contains synthetic examples of overlapping histories, tool calls/results, reasoning summaries, and separate thread identifiers. Production transcripts and keys must never be committed as fixtures.
-
-The production build remains a single `dist/index.html`. For CLIProxyAPI hosting, back up the existing management asset and install this file as `management.html` in the configured static directory. Disable automatic panel updates if you want to retain the custom build.
-
-Browser verification uses the built single-file artifact with synthetic v8 API responses. It covers authentication, thread selection, search, expansion of tool arguments/results, history deduplication, cached refresh, export, desktop/mobile layouts, and light/dark themes. See the repository's normal verification command for parser and regression tests.
-
-### Screenshots
-
-These screenshots contain synthetic conversations, not production messages.
-
-![Desktop conversation and tool output](screenshots/thread-viewer.png)
-
-[Mobile conversation view](screenshots/thread-viewer-mobile.png)
-
-Verification completed for this change: 1,689 Bun tests passed, ESLint passed, and the single-file production build passed. Chromium checks passed for chat navigation, search, tool expansion, Markdown export, cached refresh, mobile list/detail navigation, light/dark rendering, missing-log handling, and clearing history after logout/account changes. The current upstream Vite configuration emits an existing advisory about its future native config loader; the build succeeds.
-
-A separate authenticated browser check against a live CLIProxyAPI v8.0.47 instance also loaded its retained conversations and rendered the selected conversation. No production messages, credentials, or screenshots were copied into the repository.
-
-Performance regression coverage includes a 2,000-request index (12 initial downloads), newest-first ordering, bounded concurrency, cursor refresh/reset, cancellation/resumption, navigation ownership and stale-connection isolation. A 2,000-message conversation initially renders 25 user turns. Indexed stitching is compared against the original ordered-anchor semantics over 500 randomized duplicate/insertion cases. Browser checks cover older-history batches, message paging with scroll anchoring, paged tools, cache reuse, incremental refresh, search, mobile and sign-out cleanup.
+Production transcripts, credentials, and screenshots must never be committed as fixtures. Existing documentation screenshots use synthetic messages.

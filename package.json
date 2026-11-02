@@ -10,9 +10,10 @@
     "preview": "vite preview",
     "test": "bun test",
     "lint": "eslint . --ext ts,tsx --report-unused-disable-directives",
-    "verify": "bun run test && bun run lint && bun run build",
+    "verify": "bun run test && bun run lint && bun run build && bun run build:history",
     "format": "prettier --write \"src/**/*.{ts,tsx,css,scss}\"",
-    "type-check": "tsc --noEmit"
+    "type-check": "tsc --noEmit",
+    "build:history": "tsc -p server/thread-history/tsconfig.json && bun build server/thread-history/index.ts --target=node --format=esm --outfile=server/thread-history/build/index.mjs"
   },
   "dependencies": {
     "@codemirror/lang-yaml": "^6.1.3",
@@ -33,6 +34,7 @@
   },
   "devDependencies": {
     "@eslint/js": "10.0.1",
+    "@types/node": "^24",
     "@types/react": "^19.3.0",
     "@types/react-dom": "^19.3.0",
     "@typescript-eslint/eslint-plugin": "^8.72.0",

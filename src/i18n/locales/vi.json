@@ -2321,10 +2321,6 @@
   },
   "threads": {
     "loaded_history": "Đã tải {{loaded}} trên {{total}} nhật ký yêu cầu",
-    "load_older": "Tải lịch sử cũ hơn (còn {{count}})",
-    "search_loaded": "Tìm kiếm chỉ áp dụng cho lịch sử đã tải. Tải thêm để tìm các hội thoại cũ hơn.",
-    "earlier_messages": "Hiện tin nhắn trước ({{count}} phần)",
-    "earlier_activity": "Hiện hoạt động trước ({{count}} mục)",
     "missing_logs_one": "Không còn nhật ký của {{count}} yêu cầu cũ",
     "missing_logs_other": "Không còn nhật ký của {{count}} yêu cầu cũ",
     "retention_explanation": "Mã yêu cầu vẫn còn trong chỉ mục hoạt động nhưng tệp hội thoại không còn trên proxy. Nguyên nhân có thể là xoay vòng nhật ký hoặc tính năng ghi yêu cầu bị tắt. Đây không phải lỗi suy luận. Tăng dung lượng lưu giữ giúp lưu thêm lịch sử mới nhưng không khôi phục được tệp đã xóa.",

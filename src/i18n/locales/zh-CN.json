@@ -2313,10 +2313,6 @@
   },
   "threads": {
     "loaded_history": "已加载 {{loaded}} / {{total}} 个请求日志",
-    "load_older": "加载更早的历史（剩余 {{count}} 个）",
-    "search_loaded": "搜索仅包含已加载的历史。加载更早的历史以查找之前的会话。",
-    "earlier_messages": "显示更早的消息（{{count}} 个段落）",
-    "earlier_activity": "显示更早的活动（{{count}} 项）",
     "missing_logs_one": "{{count}} 个较早的请求日志不可用",
     "missing_logs_other": "{{count}} 个较早的请求日志不可用",
     "retention_explanation": "这些请求 ID 仍在活动索引中，但代理上已没有对应的会话文件。日志轮转或未启用请求日志可能导致此情况。这不是推理错误。增加日志保留容量可保存更多后续历史，但无法恢复已删除的文件。",

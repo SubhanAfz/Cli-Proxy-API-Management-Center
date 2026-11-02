@@ -2315,10 +2315,6 @@
   },
   "threads": {
     "loaded_history": "요청 로그 {{total}}개 중 {{loaded}}개 불러옴",
-    "load_older": "이전 기록 불러오기 ({{count}}개 남음)",
-    "search_loaded": "검색은 불러온 기록에 적용됩니다. 이전 대화를 찾으려면 이전 기록을 불러오세요.",
-    "earlier_messages": "이전 메시지 보기 ({{count}}개 구간)",
-    "earlier_activity": "이전 활동 보기 ({{count}}개 항목)",
     "missing_logs_one": "이전 요청 로그 {{count}}개를 사용할 수 없습니다",
     "missing_logs_other": "이전 요청 로그 {{count}}개를 사용할 수 없습니다",
     "retention_explanation": "요청 ID는 활동 색인에 남아 있지만 대화 파일은 프록시에 없습니다. 로그 순환이나 요청 로깅 비활성화가 원인일 수 있습니다. 추론 오류가 아닙니다. 로그 보관 용량을 늘리면 향후 기록을 더 많이 저장할 수 있지만 삭제된 파일은 복구되지 않습니다.",

@@ -8,10 +8,7 @@ import {
   buildConversationThreads,
   mergeConversation,
 } from '../src/features/threads/model/conversations';
-import {
-  conversationBlocks,
-  CONVERSATION_PAGE_SIZE,
-} from '../src/features/threads/model/visibleConversation';
+import { conversationBlocks } from '../src/features/threads/model/visibleConversation';
 import type { ConversationItem } from '../src/features/threads/types';
 import en from '../src/i18n/locales/en.json';
 
@@ -60,7 +57,7 @@ test('indexed history stitching preserves ordered duplicates, insertions and ori
   }
 });
 
-test('a 2000-message conversation initially renders only the latest 25 turns without losing history', async () => {
+test('a 2000-message conversation includes every turn without paging controls', async () => {
   const items = Array.from({ length: 1000 }, (_, n) => [item(n), item(n, 'assistant')]).flat();
   const thread = buildConversationThreads([
     {
@@ -84,10 +81,10 @@ test('a 2000-message conversation initially renders only the latest 25 turns wit
       createElement(Conversation, { thread, showContext: false })
     )
   );
-  expect(html.match(/<article/g)).toHaveLength(CONVERSATION_PAGE_SIZE);
-  expect(html).toContain('Show earlier messages (975 sections)');
+  expect(html.match(/<article/g)).toHaveLength(1000);
+  expect(html).not.toContain('Show earlier messages');
   expect(html).toContain('Synthetic user message 999');
-  expect(html).not.toContain('Synthetic user message 0<');
+  expect(html).toContain('Synthetic user message 0<');
   expect(thread.items).toHaveLength(2000);
   expect(conversationBlocks(thread.items, false)).toHaveLength(1000);
 });

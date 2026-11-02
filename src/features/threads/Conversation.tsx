@@ -1,4 +1,4 @@
-import { Fragment, memo, useLayoutEffect, useMemo, useRef, useState } from 'react';
+import { memo, useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
@@ -9,37 +9,40 @@ import {
   IconChevronRight,
 } from '@/components/ui/icons';
 import type { ConversationItem, ConversationThread } from './types';
-import { Button } from '@/components/ui/Button';
-import {
-  ACTIVITY_PAGE_SIZE,
-  CONVERSATION_PAGE_SIZE,
-  conversationBlocks,
-} from './model/visibleConversation';
+import { conversationBlocks } from './model/visibleConversation';
+import { useNearViewport } from './hooks/useNearViewport';
 import styles from './ThreadsPage.module.scss';
 
 const Markdown = memo(function Markdown({ text }: { text: string }) {
   const { t } = useTranslation();
+  const element = useRef<HTMLDivElement>(null);
+  const formatted = /[\n`*_#[\]>]|https?:\/\//.test(text);
+  const near = useNearViewport(element, formatted);
   return (
-    <div className={styles.markdown}>
-      <ReactMarkdown
-        remarkPlugins={[remarkGfm]}
-        components={{
-          a: ({ href, children }) => (
-            <a href={href} target="_blank" rel="noreferrer noopener">
-              {children}
-            </a>
-          ),
-          // Logged remote assets must never cause a browser request merely by opening a thread.
-          img: ({ alt }) => (
-            <span className={styles.attachment}>
-              <IconFileText size={14} />
-              {alt || t('threads.image_attachment')}
-            </span>
-          ),
-        }}
-      >
-        {text}
-      </ReactMarkdown>
+    <div className={styles.markdown} ref={element}>
+      {formatted && near ? (
+        <ReactMarkdown
+          remarkPlugins={[remarkGfm]}
+          components={{
+            a: ({ href, children }) => (
+              <a href={href} target="_blank" rel="noreferrer noopener">
+                {children}
+              </a>
+            ),
+            // Logged remote assets must never cause a browser request merely by opening a thread.
+            img: ({ alt }) => (
+              <span className={styles.attachment}>
+                <IconFileText size={14} />
+                {alt || t('threads.image_attachment')}
+              </span>
+            ),
+          }}
+        >
+          {text}
+        </ReactMarkdown>
+      ) : (
+        <div className={styles.plainMessage}>{text}</div>
+      )}
     </div>
   );
 });
@@ -113,7 +116,6 @@ function AssistantTurn({
 }) {
   const { t } = useTranslation();
   const [open, setOpen] = useState(false);
-  const [visibleActivity, setVisibleActivity] = useState(ACTIVITY_PAGE_SIZE);
   if (!items.length) return null;
   const hasActivity = items.some((item) => item.kind !== 'message' || item.phase === 'commentary');
   const last = items[items.length - 1];
@@ -150,20 +152,8 @@ function AssistantTurn({
           </summary>
           {open && (
             <div className={styles.activityBody}>
-              {work.length > visibleActivity && (
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={() => setVisibleActivity((n) => n + ACTIVITY_PAGE_SIZE)}
-                >
-                  {t('threads.earlier_activity', { count: work.length - visibleActivity })}
-                </Button>
-              )}
-              {work.slice(-visibleActivity).map((item, index) => (
-                <ActivityItem
-                  key={`${item.id || item.callId || Math.max(0, work.length - visibleActivity) + index}-${item.kind}`}
-                  item={item}
-                />
+              {work.map((item, index) => (
+                <ActivityItem key={`${item.id || item.callId || index}-${item.kind}`} item={item} />
               ))}
             </div>
           )}
@@ -190,44 +180,18 @@ export const Conversation = memo(function Conversation({
     () => conversationBlocks(thread.items, showContext),
     [thread.items, showContext]
   );
-  const [visibleBlocks, setVisibleBlocks] = useState(CONVERSATION_PAGE_SIZE);
-  const scrollAnchor = useRef<{ element: HTMLElement; height: number; top: number } | null>(null);
-  useLayoutEffect(() => {
-    const anchor = scrollAnchor.current;
-    if (anchor) {
-      anchor.element.scrollTop = anchor.top + anchor.element.scrollHeight - anchor.height;
-      scrollAnchor.current = null;
-    }
-  }, [visibleBlocks]);
-  const hidden = Math.max(0, blocks.length - visibleBlocks);
   return (
     <div className={styles.messages}>
-      {hidden > 0 ? (
-        <Button
-          variant="secondary"
-          size="sm"
-          onClick={(event) => {
-            const element = event.currentTarget.closest<HTMLElement>('[data-conversation-scroll]');
-            if (element)
-              scrollAnchor.current = {
-                element,
-                height: element.scrollHeight,
-                top: element.scrollTop,
-              };
-            setVisibleBlocks((count) => count + CONVERSATION_PAGE_SIZE);
-          }}
+      <div className={styles.startMarker}>
+        <span />
+        <span>{t('threads.conversation_start')}</span>
+        <span />
+      </div>
+      {blocks.map((block, index) => (
+        <div
+          className={styles.messageBlock}
+          key={`${block.user?.id || block.context?.id || index}`}
         >
-          {t('threads.earlier_messages', { count: hidden })}
-        </Button>
-      ) : (
-        <div className={styles.startMarker}>
-          <span />
-          <span>{t('threads.conversation_start')}</span>
-          <span />
-        </div>
-      )}
-      {blocks.slice(-visibleBlocks).map((block, index) => (
-        <Fragment key={`${block.user?.id || block.context?.id || hidden + index}`}>
           {block.context && (
             <details className={styles.context}>
               <summary>
@@ -251,7 +215,7 @@ export const Conversation = memo(function Conversation({
             </article>
           )}
           <AssistantTurn items={block.activity} thread={thread} />
-        </Fragment>
+        </div>
       ))}
       <div className={styles.endMarker}>
         <span className={styles.statusDot} />

@@ -1,8 +1,5 @@
 import type { ConversationItem } from '../types';
 
-export const CONVERSATION_PAGE_SIZE = 25;
-export const ACTIVITY_PAGE_SIZE = 100;
-
 export interface ConversationBlock {
   user?: ConversationItem;
   activity: ConversationItem[];

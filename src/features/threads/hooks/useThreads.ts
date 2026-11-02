@@ -1,11 +1,10 @@
 import { useEffect, useMemo, useSyncExternalStore } from 'react';
 import { useAuthStore, useConfigStore } from '@/stores';
 import { apiClient } from '@/services/api/client';
-import { createLogsApi, responseDataToText } from '@/services/api/logs';
-import { buildConversationThreads } from '../model/conversations';
-import { ThreadLogLoader } from '../model/ThreadLogLoader';
+import { createThreadHistoryApi } from '@/services/api/threadHistory';
+import { CompleteHistoryLoader } from '../model/CompleteHistoryLoader';
 
-let session: { revision: number; loader: ThreadLogLoader } | undefined;
+let session: { revision: number; loader: CompleteHistoryLoader } | undefined;
 
 // Clear private history immediately on logout or connection change, including off this route.
 useAuthStore.subscribe((state, previous) => {
@@ -19,19 +18,14 @@ useAuthStore.subscribe((state, previous) => {
   }
 });
 
-function getSession(revision: number): ThreadLogLoader {
+function getSession(revision: number): CompleteHistoryLoader {
   if (session?.revision === revision) return session.loader;
   session?.loader.clear();
-  const logsApi = createLogsApi(apiClient.captureConnection());
-  const loader = new ThreadLogLoader({
-    fetchIndex: (query, signal) => logsApi.fetchLogs(query, { signal }),
-    download: async (reference, signal) => {
-      const response = await logsApi.downloadRequestLogById(reference.id, { signal });
-      return responseDataToText(response.data);
-    },
+  const historyApi = createThreadHistoryApi(apiClient.captureConnection());
+  const loader = new CompleteHistoryLoader({
+    fetch: historyApi.fetch,
     isCurrent: () =>
       revision === apiClient.getConnectionRevision() && useAuthStore.getState().isAuthenticated,
-    yieldToBrowser: () => new Promise((resolve) => window.setTimeout(resolve, 0)),
   });
   session = { revision, loader };
   return loader;
@@ -60,6 +54,5 @@ export function useThreads(autoRefresh: boolean, active = true) {
     return () => window.clearInterval(timer);
   }, [autoRefresh, loader, active]);
 
-  const threads = useMemo(() => buildConversationThreads(snapshot.requests), [snapshot.requests]);
-  return { ...snapshot, threads, config, refresh: loader.refresh, loadOlder: loader.loadOlder };
+  return { ...snapshot, config, refresh: loader.refresh };
 }
